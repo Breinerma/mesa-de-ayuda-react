@@ -1,24 +1,59 @@
-import { Routes, Route } from "react-router-dom";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import Dashboard from "./pages/Dashboard";
-import Tickets from "./pages/Tickets";
-import NewTicket from "./pages/NewTicket";
+import { ReactNode } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import Login from "./pages/Login";
+import DashboardUser from "./pages/DashboardUser";
+import DashboardAgent from "./pages/DashboardAgent";
+import DashboardAdmin from "./pages/DashboardAdmin";
+import AuthCallback from "./pages/AuthCallback";
+
+function ProtectedRoute({
+  children,
+  allowedRoles,
+}: {
+  children: ReactNode;
+  allowedRoles: string[];
+}) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/" />;
+  if (!allowedRoles.includes(user.rol)) return <Navigate to="/" />;
+  return children;
+}
 
 export default function App() {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <main className="p-6 flex-1 overflow-y-auto">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/tickets" element={<Tickets />} />
-            <Route path="/new" element={<NewTicket />} />
-          </Routes>
-        </main>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+
+        <Route
+          path="/dashboard-user"
+          element={
+            <ProtectedRoute allowedRoles={["usuario"]}>
+              <DashboardUser />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard-agent"
+          element={
+            <ProtectedRoute allowedRoles={["agente"]}>
+              <DashboardAgent />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard-admin"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <DashboardAdmin />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
