@@ -1,54 +1,59 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { loginUser, fetchUserData } from "../services/apiClient";
+import "./Login.css";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState("");
-  const navigate = useNavigate();
-  const { setUser, setTickets } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus("Iniciando sesión...");
-
-    try {
-      const { token } = await loginUser(email, password);
-      const data = await fetchUserData(token);
-      const { user, ticket } = data;
-
-      setUser(user);
-      setTickets(ticket);
-      localStorage.setItem("userInfo", JSON.stringify(data));
-
-      if (user.rol === "admin") navigate("/dashboard-admin");
-      else if (user.rol === "agente") navigate("/dashboard-agent");
-      else navigate("/dashboard-user");
-    } catch (err) {
-      setStatus("Error al iniciar sesión");
-      console.error(err);
-    }
+    console.log("Login:", email, password);
+    // Aquí luego se integrará la función real de loginUser()
   };
 
   return (
-    <form onSubmit={handleLogin}>
-      <h2>Iniciar sesión</h2>
-      <input
-        type="email"
-        placeholder="Correo electrónico"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Contraseña"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button type="submit">Entrar</button>
-      <p>{status}</p>
-    </form>
+    <div className="login-body">
+      <div className="login-card">
+        <div className="header">
+          <h1>Mesa de Ayuda</h1>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="input-group">
+            <input
+              type="text"
+              id="usuario"
+              name="usuario"
+              placeholder="Usuario o correo electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="input-group">
+            <input
+              type="password"
+              id="contrasena"
+              name="contrasena"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="button-group">
+            <button type="submit" className="submit-button">
+              Iniciar sesión
+            </button>
+          </div>
+
+          <div className="help-link">
+            <a href="#">¿Necesitas ayuda?</a>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
