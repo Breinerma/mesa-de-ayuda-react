@@ -78,3 +78,36 @@
 .help-link a:hover {
   text-decoration: underline;
 }
+
+.google-button {
+  width: 100%;
+  background-color: white;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 20px;
+}
+
+.google-button:hover {
+  background-color: #f7f8f8;
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.status-msg {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+}

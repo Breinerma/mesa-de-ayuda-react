@@ -22,8 +22,8 @@ export default function AuthCallback() {
 
         localStorage.setItem("userInfo", JSON.stringify(userInfo));
 
-        setStatus("Sesión válida");
-        navigate("/dashboard");
+        setStatus("Sesión válida ✅");
+        navigate("/dashboard-user"); 
       } catch (e) {
         console.error(e);
         setStatus("Error al obtener datos del usuario");
@@ -31,7 +31,7 @@ export default function AuthCallback() {
     };
 
     handleAuth();
-  }, []);
+  }, [navigate]);
 
   return <p>{status}</p>;
 }
