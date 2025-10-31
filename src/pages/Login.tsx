@@ -15,7 +15,7 @@ export default function Login() {
     <div className="login-body">
       <div className="login-card">
         <div className="header">
-          <h1>Mesa de Ayuda</h1>
+          <h1>Ingrese a la Mesa de Ayuda</h1>
         </div>
 
         <form onSubmit={handleSubmit}>
