@@ -13,7 +13,8 @@ export default function AuthCallback() {
 
       if (error || !data?.session) {
         setStatus("Error de autenticación ☠️ " + error);
-        console.log(error);
+        console.log("Datos de sesión Supabase:", data);
+        console.log("Error Supabase:", error);
         return;
       }
 
@@ -28,6 +29,16 @@ export default function AuthCallback() {
       } catch (e) {
         console.error(e);
         setStatus("Error al obtener datos del usuario ☠️");
+      }
+      try {
+        const userInfo = await fetchUserData(data.session.access_token);
+        console.log("Datos del backend:", userInfo);
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+        setStatus("Sesión válida (^_^)");
+        navigate("/dashboard-user");
+      } catch (e: any) {
+        console.error("Error al obtener datos del usuario:", e);
+        setStatus("Error al obtener datos del usuario ☠️ " + e.message);
       }
     };
 
