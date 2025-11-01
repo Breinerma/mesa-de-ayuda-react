@@ -12,7 +12,8 @@ export default function AuthCallback() {
       const { data, error } = await supabase.auth.getSession();
 
       if (error || !data?.session) {
-        setStatus("Error de autenticación ☠️");
+        setStatus("Error de autenticación ☠️ " + error);
+        console.log(error);
         return;
       }
 
