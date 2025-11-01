@@ -81,7 +81,7 @@ export default function Login() {
         {status && <p className="status-msg">{status}</p>}
 
         <div className="help-link">
-          <a href="#">¿Necesitas ayuda?</a>
+          <a href="#">¿Necesita ayuda?</a>
         </div>
       </div>
     </div>
