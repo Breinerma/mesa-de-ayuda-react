@@ -10,7 +10,7 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Login:", email, password);
-    setStatus("🔧 Pronto se integrará el login con backend");
+    setStatus("🔧 Pronto se integrará el login con backend... Tal vez");
   };
 
   const handleGoogleLogin = async () => {

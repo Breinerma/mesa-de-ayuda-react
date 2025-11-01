@@ -23,10 +23,10 @@ export default function AuthCallback() {
         localStorage.setItem("userInfo", JSON.stringify(userInfo));
 
         setStatus("Sesión válida ✅");
-        navigate("/dashboard-user"); 
+        navigate("/dashboard-user");
       } catch (e) {
         console.error(e);
-        setStatus("Error al obtener datos del usuario");
+        setStatus("Error al obtener datos del usuario ☠️");
       }
     };
 
