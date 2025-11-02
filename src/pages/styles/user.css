@@ -1,0 +1,126 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+}
+
+.dashboard-container {
+  display: flex;
+}
+
+.sidebar {
+  background: #292e38;
+  color: #fff;
+  width: 220px;
+  min-height: 100vh;
+  padding: 20px 0 0 0;
+}
+
+.sidebar h2 {
+  margin: 0 0 20px 20px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0 0 0 20px;
+}
+
+.sidebar ul li {
+  margin-bottom: 20px;
+}
+
+.sidebar ul li a {
+  color: #fff;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  display: block;
+}
+
+.sidebar ul li a.active,
+.sidebar ul li a:hover {
+  background: #434959;
+}
+
+.main {
+  flex: 1;
+  /* QUITAMOS EL PADDING DE AQUÍ para aplicarlo a los elementos internos */
+  /* padding: 40px; <-- Removido */
+}
+
+/* --- CAMBIO CLAVE: Aplicamos un contenedor interno al Main --- */
+.main-content-wrapper {
+  padding: 40px; /* Aplicamos el padding al contenedor interno */
+}
+/* ----------------------------------------------------------- */
+
+.dashboard-header {
+  /* La barra principal de color azul */
+  background: #2f97ff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  /* El ancho ahora está limitado por el padding del .main-content-wrapper */
+  border-radius: 8px;
+}
+
+.logout-button {
+  background: #d52929;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  margin-top: 30px;
+  padding: 24px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+  /* El ancho de la tarjeta también se limita por el padding del .main-content-wrapper */
+}
+
+.ticket {
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ticket:last-child {
+  border-bottom: none;
+}
+
+.status {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.93em;
+  color: #fff;
+}
+
+.status.abierto {
+  background: #1abc9c;
+}
+.status.cerrado {
+  background: #888;
+}
+.status.enproceso {
+  background: #f4d13c;
+  color: #444;
+}
+/* Mantenemos los nuevos estados por si tu script los usa */
+.status.asignado {
+  background: orange;
+  color: white;
+}
+.status.resuelto {
+  background: #007bff;
+  color: white;
+}
