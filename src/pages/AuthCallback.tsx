@@ -39,7 +39,7 @@ export default function AuthCallback() {
         justifyContent: "center",
         alignItems: "center",
         flexDirection: "column",
-        backgroundColor: "#2f97ff", // 💙 Fondo azul
+        backgroundColor: "#2f97ff",
         color: "white",
         fontFamily: "Arial, sans-serif",
         fontSize: "1.2em",
