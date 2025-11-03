@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
-import { fetchUserData } from "../services/apiClient";
 import { useNavigate } from "react-router-dom";
 
 export default function AuthCallback() {
@@ -19,25 +18,12 @@ export default function AuthCallback() {
       }
 
       try {
-        const userInfo = await fetchUserData(data.session.access_token);
-        console.log("Datos del backend:", userInfo);
-
-        localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-        setStatus("Sesión válida (^_^)");
-        navigate("/dashboard-user");
-      } catch (e) {
-        console.error(e);
-        setStatus("Error al obtener datos del usuario ☠️");
-      }
-      try {
-        const userInfo = await fetchUserData(data.session.access_token);
-        console.log("Datos del backend:", userInfo);
-        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+        const user = data.session.user;
+        localStorage.setItem("user", JSON.stringify(user));
         setStatus("Sesión válida (^_^)");
         navigate("/dashboard-user");
       } catch (e: any) {
-        console.error("Error al obtener datos del usuario:", e);
+        console.error("Error al procesar la sesión:", e);
         setStatus("Error al obtener datos del usuario ☠️ " + e.message);
       }
     };
@@ -45,5 +31,22 @@ export default function AuthCallback() {
     handleAuth();
   }, [navigate]);
 
-  return <p>{status}</p>;
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column",
+        backgroundColor: "#2f97ff", // 💙 Fondo azul
+        color: "white",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "1.2em",
+      }}
+    >
+      <h1 style={{ marginBottom: "10px" }}>Mesa de Ayuda</h1>
+      <p>{status}</p>
+    </div>
+  );
 }
