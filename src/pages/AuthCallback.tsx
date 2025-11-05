@@ -8,23 +8,47 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuth = async () => {
-      const { data, error } = await supabase.auth.getSession();
-
-      if (error || !data?.session) {
-        setStatus("Error de autenticación ☠️ " + error);
-        console.log("Datos de sesión Supabase:", data);
-        console.log("Error Supabase:", error);
-        return;
-      }
-
       try {
-        const user = data.session.user;
-        localStorage.setItem("user", JSON.stringify(user));
-        setStatus("Sesión válida (^_^)");
-        navigate("/dashboard-user");
-      } catch (e: any) {
-        console.error("Error al procesar la sesión:", e);
-        setStatus("Error al obtener datos del usuario ☠️ " + e.message);
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error || !data.session) {
+          console.error("Error obteniendo sesión:", error);
+          setStatus("Error de autenticación ☠️");
+          return;
+        }
+
+        const session = data.session;
+        const user = session.user;
+
+        console.log("Usuario autenticado: ", user);
+
+        // Guardar datos esenciales del usuario en localStorage
+        const userInfo = {
+          id: user.id,
+          email: user.email ?? "",
+          name: user.user_metadata?.name ?? "Usuario",
+          rol: user.user_metadata?.rol ?? "usuario",
+        };
+
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+        localStorage.setItem("access_token", session.access_token);
+        localStorage.setItem("refresh_token", session.refresh_token);
+
+        setStatus("Sesión válida ✅");
+        switch (userInfo.rol) {
+          case "admin":
+            navigate("/dashboard-admin");
+            break;
+          case "agente":
+            navigate("/dashboard-agent");
+            break;
+          default:
+            navigate("/dashboard-user");
+            break;
+        }
+      } catch (err) {
+        console.error("Error en la autenticación:", err);
+        setStatus("Error en la autenticación ☠️");
       }
     };
 
@@ -38,14 +62,12 @@ export default function AuthCallback() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        flexDirection: "column",
-        backgroundColor: "#2f97ff",
+        background: "#2f97ff",
         color: "white",
-        fontFamily: "Arial, sans-serif",
         fontSize: "1.2em",
+        flexDirection: "column",
       }}
     >
-      <h1 style={{ marginBottom: "10px" }}>Mesa de Ayuda</h1>
       <p>{status}</p>
     </div>
   );
