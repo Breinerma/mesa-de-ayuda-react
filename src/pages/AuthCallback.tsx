@@ -11,7 +11,6 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuth = async () => {
       try {
-        // 1️⃣ Obtener sesión de Supabase
         const { data } = await supabase.auth.getSession();
         if (!data.session) {
           setStatus("Error: no hay sesión");
@@ -20,7 +19,6 @@ export default function AuthCallback() {
 
         const accessToken = data.session.access_token;
 
-        // 2️⃣ Llamar al backend
         const response = await fetch("http://localhost:3000/api/auth/me", {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -32,7 +30,6 @@ export default function AuthCallback() {
         const result = await response.json();
         const backendUser = result.user;
 
-        // 3️⃣ Convertir rol_id → rol string
         const roleMap = {
           1: "usuario",
           2: "agente",
@@ -47,11 +44,9 @@ export default function AuthCallback() {
           job_title: backendUser.job_title,
         };
 
-        // 4️⃣ Guardar en AuthContext y localStorage
         localStorage.setItem("userInfo", JSON.stringify(formattedUser));
         setUser(formattedUser);
 
-        // 5️⃣ Redirigir según rol
         switch (formattedUser.rol) {
           case "admin":
             navigate("/dashboard-admin");
