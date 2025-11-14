@@ -1,7 +1,9 @@
+// src/pages/AuthCallback.tsx
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { formatBackendUser } from "../types";
 
 export default function AuthCallback() {
   const [status, setStatus] = useState("Verificando sesión...");
@@ -14,10 +16,18 @@ export default function AuthCallback() {
         const { data } = await supabase.auth.getSession();
         if (!data.session) {
           setStatus("Error: no hay sesión");
+          setTimeout(() => navigate("/login"), 2000);
           return;
         }
 
         const accessToken = data.session.access_token;
+        const refreshToken = data.session.refresh_token;
+
+        // Guardar tokens
+        localStorage.setItem("access_token", accessToken);
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+        }
 
         const response = await fetch("http://localhost:3000/api/auth/me", {
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -28,25 +38,12 @@ export default function AuthCallback() {
         }
 
         const result = await response.json();
-        const backendUser = result.user;
-
-        const roleMap = {
-          1: "usuario",
-          2: "agente",
-          3: "admin",
-        } as const;
-
-        const formattedUser = {
-          id: backendUser.id,
-          name: backendUser.name,
-          email: backendUser.email,
-          rol: roleMap[backendUser.rol_id],
-          job_title: backendUser.job_title,
-        };
+        const formattedUser = formatBackendUser(result.user);
 
         localStorage.setItem("userInfo", JSON.stringify(formattedUser));
         setUser(formattedUser);
 
+        // Redirigir según el rol
         switch (formattedUser.rol) {
           case "admin":
             navigate("/dashboard-admin");
@@ -61,6 +58,7 @@ export default function AuthCallback() {
       } catch (err) {
         console.error(err);
         setStatus("Error en la autenticación");
+        setTimeout(() => navigate("/login"), 2000);
       }
     };
 

@@ -6,37 +6,46 @@ import {
   useState,
   ReactNode,
 } from "react";
-
-type User = {
-  id: string;
-  name: string;
-  rol: "usuario" | "agente" | "admin";
-  job_title: string;
-};
+import { User, Ticket } from "../types";
 
 type AuthContextType = {
   user: User | null;
   setUser: (user: User | null) => void;
-  tickets: any[];
-  setTickets: (tickets: any[]) => void;
+  tickets: Ticket[];
+  setTickets: (tickets: Ticket[]) => void;
   loading: boolean;
   logout: () => void;
+  isAdmin: boolean;
+  isAgent: boolean;
+  isUser: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const saved = localStorage.getItem("userInfo");
     if (saved) {
-      setUser(JSON.parse(saved));
+      try {
+        setUser(JSON.parse(saved));
+      } catch (error) {
+        console.error("Error parsing user info:", error);
+        localStorage.removeItem("userInfo");
+      }
     }
     setLoading(false);
   }, []);
+
+  // Actualizar localStorage cuando cambia el usuario
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("userInfo", JSON.stringify(user));
+    }
+  }, [user]);
 
   const logout = () => {
     setUser(null);
@@ -46,9 +55,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("refresh_token");
   };
 
+  // Helpers para verificar roles
+  const isAdmin = user?.rol === "admin";
+  const isAgent = user?.rol === "agente";
+  const isUser = user?.rol === "usuario";
+
   return (
     <AuthContext.Provider
-      value={{ user, setUser, tickets, setTickets, loading, logout }}
+      value={{
+        user,
+        setUser,
+        tickets,
+        setTickets,
+        loading,
+        logout,
+        isAdmin,
+        isAgent,
+        isUser,
+      }}
     >
       {children}
     </AuthContext.Provider>
