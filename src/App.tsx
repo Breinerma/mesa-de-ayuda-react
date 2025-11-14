@@ -1,4 +1,3 @@
-// src/App.tsx
 import { ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
@@ -35,43 +34,27 @@ function ProtectedRoute({
     );
 
   if (!user) return <Navigate to="/" />;
-  if (!allowedRoles.includes(user.rol || "")) return <Navigate to="/" />;
+  if (!allowedRoles.includes(user.rol)) return <Navigate to="/" />;
+
   return children;
 }
 
 export default function App() {
-  const { loading } = useAuth();
-
-  if (loading)
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#2f97ff",
-          color: "white",
-          fontSize: "1.5rem",
-        }}
-      >
-        Cargando Mesa de Ayuda...
-      </div>
-    );
-
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+
         <Route
           path="/dashboard-user"
           element={
-            <ProtectedRoute allowedRoles={["usuario", "user"]}>
+            <ProtectedRoute allowedRoles={["usuario"]}>
               <DashboardUser />
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/dashboard-agent"
           element={
@@ -80,6 +63,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/dashboard-admin"
           element={

@@ -1,41 +1,58 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function AuthCallback() {
   const [status, setStatus] = useState("Verificando sesión...");
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   useEffect(() => {
     const handleAuth = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-
-        if (error || !data.session) {
-          console.error("Error obteniendo sesión:", error);
-          setStatus("Error de autenticación ☠️");
+        // 1️⃣ Obtener sesión de Supabase
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          setStatus("Error: no hay sesión");
           return;
         }
 
-        const session = data.session;
-        const user = session.user;
+        const accessToken = data.session.access_token;
 
-        console.log("Usuario autenticado: ", user);
+        // 2️⃣ Llamar al backend
+        const response = await fetch("http://localhost:3000/api/auth/me", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
 
-        // Guardar datos esenciales del usuario en localStorage
-        const userInfo = {
-          id: user.id,
-          email: user.email ?? "",
-          name: user.user_metadata?.name ?? "Usuario",
-          rol: user.user_metadata?.rol ?? "usuario",
+        if (!response.ok) {
+          throw new Error("Backend no autorizó");
+        }
+
+        const result = await response.json();
+        const backendUser = result.user;
+
+        // 3️⃣ Convertir rol_id → rol string
+        const roleMap = {
+          1: "usuario",
+          2: "agente",
+          3: "admin",
+        } as const;
+
+        const formattedUser = {
+          id: backendUser.id,
+          name: backendUser.name,
+          email: backendUser.email,
+          rol: roleMap[backendUser.rol_id],
+          job_title: backendUser.job_title,
         };
 
-        localStorage.setItem("userInfo", JSON.stringify(userInfo));
-        localStorage.setItem("access_token", session.access_token);
-        localStorage.setItem("refresh_token", session.refresh_token);
+        // 4️⃣ Guardar en AuthContext y localStorage
+        localStorage.setItem("userInfo", JSON.stringify(formattedUser));
+        setUser(formattedUser);
 
-        setStatus("Sesión válida ✅");
-        switch (userInfo.rol) {
+        // 5️⃣ Redirigir según rol
+        switch (formattedUser.rol) {
           case "admin":
             navigate("/dashboard-admin");
             break;
@@ -47,13 +64,13 @@ export default function AuthCallback() {
             break;
         }
       } catch (err) {
-        console.error("Error en la autenticación:", err);
-        setStatus("Error en la autenticación ☠️");
+        console.error(err);
+        setStatus("Error en la autenticación");
       }
     };
 
     handleAuth();
-  }, [navigate]);
+  }, [navigate, setUser]);
 
   return (
     <div
@@ -65,10 +82,9 @@ export default function AuthCallback() {
         background: "#2f97ff",
         color: "white",
         fontSize: "1.2em",
-        flexDirection: "column",
       }}
     >
-      <p>{status}</p>
+      {status}
     </div>
   );
 }
