@@ -4,12 +4,10 @@ import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { formatBackendUser } from "../types";
-
 export default function AuthCallback() {
   const [status, setStatus] = useState("Verificando sesión...");
   const navigate = useNavigate();
   const { setUser } = useAuth();
-
   useEffect(() => {
     const handleAuth = async () => {
       try {
@@ -19,19 +17,19 @@ export default function AuthCallback() {
           setTimeout(() => navigate("/login"), 2000);
           return;
         }
-
         const accessToken = data.session.access_token;
         const refreshToken = data.session.refresh_token;
-
         // Guardar tokens
         localStorage.setItem("access_token", accessToken);
         if (refreshToken) {
           localStorage.setItem("refresh_token", refreshToken);
         }
-
-        const response = await fetch("http://localhost:3000/api/auth/me", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const response = await fetch(
+          "https://helpdesks.up.railway.app/api/auth/me",
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
 
         if (!response.ok) {
           throw new Error("Backend no autorizó");

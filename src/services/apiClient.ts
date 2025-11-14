@@ -204,3 +204,82 @@ export async function assignTicket(
 
   return response.json();
 }
+
+export async function updateTicketPriority(
+  ticketId: number,
+  priority_id: number
+): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/priority`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ priority_id }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Error al actualizar prioridad");
+  }
+
+  return response.json();
+}
+
+// ==================== CATEGORIES ====================
+export async function createCategory(name: string): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/categories`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ name }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Error al crear categoría");
+  }
+
+  return response.json();
+}
+
+// ==================== MESSAGES ====================
+export async function sendTicketMessage(
+  ticketId: number,
+  content: string
+): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/messages`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ content }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Error al enviar mensaje");
+  }
+
+  return response.json();
+}
+
+export async function replyToTicket(
+  ticketId: number,
+  content: string
+): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/reply`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ content }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Error al enviar respuesta");
+  }
+
+  return response.json();
+}
+
+export async function getTicketMessages(ticketId: number): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/messages`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error("Error al obtener mensajes");
+  }
+
+  return response.json();
+}

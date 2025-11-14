@@ -71,6 +71,19 @@ export interface UpdateProfileData {
   job_title?: string;
 }
 
+export interface Message {
+  id: number;
+  conversation_id: number;
+  sent_at: string;
+  content: string;
+  user_id: string;
+  user?: TicketUser;
+}
+
+export interface TicketWithMessages extends Ticket {
+  messages?: Message[];
+}
+
 // Mapeo de roles
 export const roleMap: Record<RolId, RolType> = {
   1: "usuario",

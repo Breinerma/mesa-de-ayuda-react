@@ -4,6 +4,7 @@ import {
   createTicket,
   getMyTickets,
   assignTicket,
+  updateTicketPriority,
 } from "../services/apiClient";
 import { Ticket, CreateTicketData } from "../types";
 import { useAuth } from "../context/AuthContext";

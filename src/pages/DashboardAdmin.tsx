@@ -3,6 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { useTickets } from "../hooks/useTickets";
 import { useUsers } from "../hooks/useUsers";
 import { useState, useEffect } from "react";
+import TicketChat from "../components/TicketChat";
+import { Ticket } from "../types";
 import "./styles/admin.css";
 
 type ViewType = "tickets" | "users";

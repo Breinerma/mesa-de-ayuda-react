@@ -237,6 +237,35 @@ body {
   background: #45a049;
 }
 
+.chat-button {
+  background: #2196f3;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.chat-button:hover {
+  background: #1976d2;
+}
+
+.priority-select {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  background: white;
+}
+
+.priority-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
 /* Estados de tickets */
 .status.abierto {
   background: #2196f3;
