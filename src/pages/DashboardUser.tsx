@@ -122,12 +122,12 @@ export default function DashboardUser() {
           </div>
 
           <div className="card">
-            <h2>Mis Tickets ({filtered.length})</h2>
+            <h2 className="text-color">Mis Tickets ({filtered.length})</h2>
 
             {loading && <p>Cargando tickets...</p>}
 
             {!loading && filtered.length === 0 && (
-              <p>No tienes tickets. ¡Crea uno nuevo!</p>
+              <p className="text-color">No tienes tickets</p>
             )}
 
             {filtered.map((t) => (
@@ -238,6 +238,7 @@ export default function DashboardUser() {
               <input
                 type="text"
                 placeholder="Nombre"
+                className="text-color"
                 value={profileForm.name}
                 onChange={(e) =>
                   setProfileForm({ ...profileForm, name: e.target.value })
@@ -246,6 +247,7 @@ export default function DashboardUser() {
               <input
                 type="text"
                 placeholder="Cargo"
+                className="text-color"
                 value={profileForm.job_title}
                 onChange={(e) =>
                   setProfileForm({ ...profileForm, job_title: e.target.value })

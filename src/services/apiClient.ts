@@ -22,6 +22,8 @@ export async function fetchUserData(token: string): Promise<any> {
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al obtener datos del usuario");
   }
 
@@ -39,6 +41,8 @@ export async function loginUser(
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error en el inicio de sesión");
   }
 
@@ -51,6 +55,8 @@ export async function getAuthMe(): Promise<any> {
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al obtener información del usuario");
   }
 
@@ -59,11 +65,13 @@ export async function getAuthMe(): Promise<any> {
 
 // ==================== USERS ====================
 export async function getAllUsers(): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/users`, {
+  const response = await fetch(`${API_BASE_URL}/api/users`, {
     headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al obtener usuarios");
   }
 
@@ -71,11 +79,13 @@ export async function getAllUsers(): Promise<any> {
 }
 
 export async function getUserById(userId: string): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
     headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al obtener usuario");
   }
 
@@ -86,25 +96,28 @@ export async function updateUserProfile(data: {
   name?: string;
   job_title?: string;
 }): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/users/profile`, {
+  const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al actualizar perfil");
   }
-
   return response.json();
 }
 
 export async function getAgents(): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/users/agentes`, {
+  const response = await fetch(`${API_BASE_URL}/api/users/agentes`, {
     headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al obtener agentes");
   }
 
@@ -115,13 +128,15 @@ export async function updateUserRole(
   userId: string,
   rol_id: number
 ): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/role`, {
+  const response = await fetch(`${API_BASE_URL}/api/users/${userId}/role`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify({ userId, rol_id }),
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al actualizar rol");
   }
 
@@ -129,13 +144,18 @@ export async function updateUserRole(
 }
 
 export async function deactivateUser(userId: string): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/deactivate`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ userId }),
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/users/${userId}/deactivate`,
+    {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ userId }),
+    }
+  );
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al desactivar usuario");
   }
 
@@ -143,13 +163,15 @@ export async function deactivateUser(userId: string): Promise<any> {
 }
 
 export async function activateUser(userId: string): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/activate`, {
+  const response = await fetch(`${API_BASE_URL}/api/users/${userId}/activate`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify({ userId }),
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al activar usuario");
   }
 
@@ -163,13 +185,15 @@ export async function createTicket(data: {
   category_id: number;
   priority_id: number;
 }): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/tickets`, {
+  const response = await fetch(`${API_BASE_URL}/api/tickets`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al crear ticket");
   }
 

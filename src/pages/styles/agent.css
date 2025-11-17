@@ -384,3 +384,6 @@ table select {
   border-radius: 4px;
   margin-bottom: 20px;
 }
+.text-color {
+  color: #000000;
+}
