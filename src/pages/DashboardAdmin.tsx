@@ -22,6 +22,8 @@ export default function DashboardAdmin() {
   } = useUsers();
 
   const [currentView, setCurrentView] = useState<ViewType>("tickets");
+  const [filterStatus, setFilterStatus] = useState<number | "">("");
+  const [filterPriority, setFilterPriority] = useState<number | "">("");
   const [search, setSearch] = useState("");
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
@@ -77,9 +79,19 @@ export default function DashboardAdmin() {
     }
   };
 
-  const filteredTickets = tickets.filter((t) =>
-    (t.title + t.description).toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredTickets = tickets.filter((t) => {
+    const matchesSearch = (t.title + t.description)
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesStatus =
+      filterStatus === "" ? true : t.sw_status === filterStatus;
+
+    const matchesPriority =
+      filterPriority === "" ? true : t.priority_id === filterPriority;
+
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
 
   const filteredUsers = users.filter((u) =>
     (u.name + u.email + u.job_title)
@@ -157,6 +169,41 @@ export default function DashboardAdmin() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+
+            {currentView === "tickets" && (
+              <>
+                <select
+                  value={filterStatus}
+                  onChange={(e) =>
+                    setFilterStatus(
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    )
+                  }
+                >
+                  <option value="">Todos los estados</option>
+                  <option value={1}>Abierto</option>
+                  <option value={2}>En Progreso</option>
+                  <option value={3}>Cerrado</option>
+                  <option value={4}>Devuelto</option>
+                  <option value={5}>Resuelto</option>
+                  <option value={6}>Asignado</option>
+                  <option value={7}>En espera</option>
+                </select>
+                <select
+                  value={filterPriority}
+                  onChange={(e) =>
+                    setFilterPriority(
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    )
+                  }
+                >
+                  <option value="">Todas las prioridades</option>
+                  <option value={1}>Baja</option>
+                  <option value={2}>Media</option>
+                  <option value={3}>Alta</option>
+                </select>
+              </>
+            )}
           </div>
 
           {/* VISTA DE TICKETS */}
