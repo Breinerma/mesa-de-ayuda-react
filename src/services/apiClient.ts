@@ -201,7 +201,7 @@ export async function createTicket(data: {
 }
 
 export async function getMyTickets(): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/tickets/my-tickets`, {
+  const response = await fetch(`${API_BASE_URL}/api/tickets/my-tickets`, {
     headers: getAuthHeaders(),
   });
 
@@ -216,11 +216,14 @@ export async function assignTicket(
   ticketId: number,
   agente_id: string
 ): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/assign`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ agente_id }),
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/tickets/${ticketId}/assign`,
+    {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ agente_id }),
+    }
+  );
 
   if (!response.ok) {
     throw new Error("Error al asignar ticket");
@@ -233,13 +236,18 @@ export async function updateTicketPriority(
   ticketId: number,
   priority_id: number
 ): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/priority`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ priority_id }),
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/tickets/${ticketId}/priority`,
+    {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ priority_id }),
+    }
+  );
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al actualizar prioridad");
   }
 
@@ -248,13 +256,15 @@ export async function updateTicketPriority(
 
 // ==================== CATEGORIES ====================
 export async function createCategory(name: string): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/categories`, {
+  const response = await fetch(`${API_BASE_URL}/api/categories`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ name }),
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al crear categoría");
   }
 
@@ -266,13 +276,18 @@ export async function sendTicketMessage(
   ticketId: number,
   content: string
 ): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/messages`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ content }),
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/tickets/${ticketId}/messages`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ content }),
+    }
+  );
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al enviar mensaje");
   }
 
@@ -283,13 +298,18 @@ export async function replyToTicket(
   ticketId: number,
   content: string
 ): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/reply`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ content }),
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/tickets/${ticketId}/reply`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ content }),
+    }
+  );
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al enviar respuesta");
   }
 
@@ -297,11 +317,16 @@ export async function replyToTicket(
 }
 
 export async function getTicketMessages(ticketId: number): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/messages`, {
-    headers: getAuthHeaders(),
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/tickets/${ticketId}/messages`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al obtener mensajes");
   }
 
