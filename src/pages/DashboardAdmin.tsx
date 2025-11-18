@@ -5,7 +5,7 @@ import { useUsers } from "../hooks/useUsers";
 import { useState, useEffect } from "react";
 import TicketChat from "../components/TicketChat";
 import { Ticket } from "../types";
-import "./styles/admin.css";
+import "./styles/user.css";
 
 type ViewType = "tickets" | "users";
 
@@ -20,6 +20,9 @@ export default function DashboardAdmin() {
     changeUserRole,
     toggleUserStatus,
   } = useUsers();
+
+  // Menú móvil
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [currentView, setCurrentView] = useState<ViewType>("tickets");
   const [filterStatus, setFilterStatus] = useState<number | "">("");
@@ -107,6 +110,14 @@ export default function DashboardAdmin() {
         return "En Progreso";
       case 3:
         return "Cerrado";
+      case 4:
+        return "Devuelto";
+      case 5:
+        return "Resuelto";
+      case 6:
+        return "Asignado";
+      case 7:
+        return "En espera";
       default:
         return "Desconocido";
     }
@@ -126,15 +137,39 @@ export default function DashboardAdmin() {
   };
 
   return (
-    <div className="dashboard-container">
-      <aside className="sidebar">
-        <h2>Mesa de Ayuda</h2>
+    <div className="dashboard-bg">
+      {/* Hamburguesa móvil y overlay */}
+      <button
+        className="menu-hamburger"
+        style={{ display: sidebarOpen ? "none" : undefined }}
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Abrir menú lateral"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      {sidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <div
+        className={`sidebar user-sidebar${
+          sidebarOpen ? " sidebar-mobile-show" : ""
+        }`}
+      >
+        <div className="brand">Mesa de Ayuda</div>
         <ul>
           <li>
             <a
               href="#"
               className={currentView === "tickets" ? "active" : ""}
-              onClick={() => setCurrentView("tickets")}
+              onClick={() => {
+                setCurrentView("tickets");
+                setSidebarOpen(false);
+              }}
             >
               Tickets
             </a>
@@ -143,33 +178,35 @@ export default function DashboardAdmin() {
             <a
               href="#"
               className={currentView === "users" ? "active" : ""}
-              onClick={() => setCurrentView("users")}
+              onClick={() => {
+                setCurrentView("users");
+                setSidebarOpen(false);
+              }}
             >
               Gestión de Usuarios
             </a>
           </li>
         </ul>
-      </aside>
-
-      <main className="main">
-        <div className="main-content-wrapper">
-          <header className="dashboard-header">
-            <h1>Panel del Administrador - {user?.name}</h1>
-            <button className="logout-button" onClick={logout}>
+      </div>
+      <main className="user-main">
+        <div className="user-panel">
+          <div className="user-header-card">
+            <span className="user-panel-title">
+              Admin Soporte - <b>{user?.name}</b>
+            </span>
+            <button className="logout-btn" onClick={logout}>
               Cerrar sesión
             </button>
-          </header>
-
-          <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+          </div>
+          <div className="user-controls">
             <input
-              className="search"
+              className="user-search"
               placeholder={`Buscar ${
                 currentView === "tickets" ? "tickets" : "usuarios"
               }...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-
             {currentView === "tickets" && (
               <>
                 <select
@@ -205,12 +242,13 @@ export default function DashboardAdmin() {
               </>
             )}
           </div>
-
-          {/* VISTA DE TICKETS */}
+          {/* TABLE TICKETS */}
           {currentView === "tickets" && (
             <div className="card">
-              <h2>Todos los Tickets ({filteredTickets.length})</h2>
-              <table style={{ width: "100%", marginTop: "20px" }}>
+              <h2 style={{ color: "#151d26", marginBottom: 12 }}>
+                Todos los Tickets ({filteredTickets.length})
+              </h2>
+              <table className="styled-table">
                 <thead>
                   <tr>
                     <th>ID</th>
@@ -245,7 +283,7 @@ export default function DashboardAdmin() {
                       <td>{t.agente_id ? "Asignado" : "Sin asignar"}</td>
                       <td>
                         <button
-                          className="assign-button"
+                          className="table-btn btn-asignar-verde"
                           onClick={() => {
                             setSelectedTicket(t.id);
                             setShowAssignModal(true);
@@ -260,12 +298,13 @@ export default function DashboardAdmin() {
               </table>
             </div>
           )}
-
-          {/* VISTA DE USUARIOS */}
+          {/* TABLE USERS */}
           {currentView === "users" && (
             <div className="card">
-              <h2>Gestión de Usuarios ({filteredUsers.length})</h2>
-              <table style={{ width: "100%", marginTop: "20px" }}>
+              <h2 style={{ color: "#151d26", marginBottom: 12 }}>
+                Gestión de Usuarios ({filteredUsers.length})
+              </h2>
+              <table className="styled-table">
                 <thead>
                   <tr>
                     <th>Nombre</th>
@@ -298,20 +337,19 @@ export default function DashboardAdmin() {
                         </select>
                       </td>
                       <td>
-                        <span
-                          className={`status ${
-                            u.sw_active === 1 ? "open" : "closed"
-                          }`}
-                        >
-                          {u.sw_active === 1 ? "Activo" : "Inactivo"}
-                        </span>
+                        {u.sw_active === 1 ? (
+                          <span className="badge-estado-azul">Activo</span>
+                        ) : (
+                          <span className="badge-estado-gris">Inactivo</span>
+                        )}
                       </td>
+
                       <td>
                         <button
                           className={
                             u.sw_active === 1
-                              ? "deactivate-button"
-                              : "activate-button"
+                              ? "table-btn btn-desasignar-rojo"
+                              : "table-btn btn-asignar-verde"
                           }
                           onClick={() =>
                             handleToggleUserStatus(u.id, u.sw_active)
@@ -327,47 +365,51 @@ export default function DashboardAdmin() {
               </table>
             </div>
           )}
+
+          {/* MODAL ASIGNAR */}
+          {showAssignModal && (
+            <div
+              className="modal-overlay"
+              onClick={() => setShowAssignModal(false)}
+            >
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <h2>Asignar Ticket a Agente</h2>
+                <select
+                  value={selectedAgent}
+                  onChange={(e) => setSelectedAgent(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <option value="">Seleccionar agente...</option>
+                  {agents.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name} - {agent.email}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button
+                    className="assign-button"
+                    onClick={handleAssignTicket}
+                    disabled={!selectedAgent}
+                  >
+                    Asignar
+                  </button>
+                  <button
+                    className="cancel-button"
+                    onClick={() => setShowAssignModal(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
-
-      {/* Modal Asignar Ticket */}
-      {showAssignModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowAssignModal(false)}
-        >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Asignar Ticket a Agente</h2>
-            <select
-              value={selectedAgent}
-              onChange={(e) => setSelectedAgent(e.target.value)}
-              style={{ width: "100%", padding: "10px", marginBottom: "20px" }}
-            >
-              <option value="">Seleccionar agente...</option>
-              {agents.map((agent) => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.name} - {agent.email}
-                </option>
-              ))}
-            </select>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button
-                className="assign-button"
-                onClick={handleAssignTicket}
-                disabled={!selectedAgent}
-              >
-                Asignar
-              </button>
-              <button
-                className="cancel-button"
-                onClick={() => setShowAssignModal(false)}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

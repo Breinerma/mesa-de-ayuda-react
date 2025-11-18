@@ -7,7 +7,7 @@ const getToken = (): string | null => {
 };
 
 // Helper para headers con autenticación
-const getAuthHeaders = () => ({
+export const getAuthHeaders = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${getToken()}`,
 });
@@ -23,7 +23,7 @@ export async function fetchUserData(token: string): Promise<any> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Error al actualizar perfil:", errorText);
+    console.error("Error al Obtener datos del usuario:", errorText);
     throw new Error("Error al obtener datos del usuario");
   }
 
@@ -42,7 +42,7 @@ export async function loginUser(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Error al actualizar perfil:", errorText);
+    console.error("Error En el inicio de sesión:", errorText);
     throw new Error("Error en el inicio de sesión");
   }
 
@@ -56,10 +56,9 @@ export async function getAuthMe(): Promise<any> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Error al actualizar perfil:", errorText);
+    console.error("Error al Obtener información del usuario:", errorText);
     throw new Error("Error al obtener información del usuario");
   }
-
   return response.json();
 }
 
@@ -71,10 +70,9 @@ export async function getAllUsers(): Promise<any> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Error al actualizar perfil:", errorText);
+    console.error("Error al Obtener usuarios: ", errorText);
     throw new Error("Error al obtener usuarios");
   }
-
   return response.json();
 }
 
@@ -85,7 +83,7 @@ export async function getUserById(userId: string): Promise<any> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Error al actualizar perfil:", errorText);
+    console.error("Error al obtener usuario:", errorText);
     throw new Error("Error al obtener usuario");
   }
 
@@ -193,8 +191,53 @@ export async function createTicket(data: {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Error al actualizar perfil:", errorText);
+    console.error("Error al crear ticket: ", errorText);
     throw new Error("Error al crear ticket");
+  }
+
+  return response.json();
+}
+
+export async function createTicketWithImages({
+  title,
+  description,
+  category_id,
+  priority_id,
+  images,
+}: {
+  title: string;
+  description: string;
+  category_id: number;
+  priority_id: number;
+  images: File[];
+}) {
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("description", description);
+  formData.append("category_id", String(category_id));
+  formData.append("priority_id", String(priority_id));
+  for (const file of images) {
+    if (file.size > 3 * 1024 * 1024) {
+      throw new Error(
+        "Cada imagen debe pesar menos de 3 MB. Inténtalo de nuevo."
+      );
+    }
+    formData.append("images", file);
+  }
+  const response = await fetch(
+    "https://helpdesks.up.railway.app/api/tickets/with-images",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      },
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error("Error al crear ticket: " + error);
   }
 
   return response.json();
@@ -206,6 +249,22 @@ export async function getMyTickets(): Promise<any> {
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al obtener tickets: ", errorText);
+    throw new Error("Error al obtener tickets");
+  }
+
+  return response.json();
+}
+
+export async function getTickets(): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/tickets/all`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al obtener tickets: ", errorText);
     throw new Error("Error al obtener tickets");
   }
 
@@ -227,6 +286,28 @@ export async function assignTicket(
 
   if (!response.ok) {
     throw new Error("Error al asignar ticket");
+  }
+
+  return response.json();
+}
+
+export async function returnTicket(
+  ticketId: number,
+  reason: string
+): Promise<any> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/tickets/${ticketId}/return`,
+    {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ reason }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al devolver ticket:", errorText);
+    throw new Error("Error al devolver ticket");
   }
 
   return response.json();
@@ -272,25 +353,35 @@ export async function createCategory(name: string): Promise<any> {
 }
 
 // ==================== MESSAGES ====================
-export async function sendTicketMessage(
-  ticketId: number,
-  content: string
-): Promise<any> {
+export async function getTicketMessages(ticketId: number) {
   const response = await fetch(
-    `${API_BASE_URL}/api/tickets/${ticketId}/messages`,
+    `https://helpdesks.up.railway.app/api/tickets/${ticketId}/messages`,
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  if (!response.ok) throw new Error("Error al obtener mensajes");
+  return response.json();
+}
+
+export async function sendTicketMessage(ticketId: number, content: string) {
+  const response = await fetch(
+    `https://helpdesks.up.railway.app/api/tickets/${ticketId}/messages`,
     {
       method: "POST",
-      headers: getAuthHeaders(),
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ content }),
     }
   );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Error al actualizar perfil:", errorText);
-    throw new Error("Error al enviar mensaje");
-  }
-
+  if (!response.ok) throw new Error("Error al enviar mensaje");
+  const errorText = await response.text();
+  console.error("Error al Enviar mensaje:", errorText);
   return response.json();
 }
 
@@ -309,25 +400,8 @@ export async function replyToTicket(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Error al actualizar perfil:", errorText);
+    console.error("Error al Enviar respuesta:", errorText);
     throw new Error("Error al enviar respuesta");
-  }
-
-  return response.json();
-}
-
-export async function getTicketMessages(ticketId: number): Promise<any> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/tickets/${ticketId}/messages`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Error al actualizar perfil:", errorText);
-    throw new Error("Error al obtener mensajes");
   }
 
   return response.json();

@@ -5,6 +5,7 @@ import {
   getMyTickets,
   assignTicket,
   updateTicketPriority,
+  returnTicket,
 } from "../services/apiClient";
 import { Ticket, CreateTicketData } from "../types";
 import { useAuth } from "../context/AuthContext";
@@ -36,7 +37,6 @@ export function useTickets() {
     try {
       const response = await createTicket(data);
       if (response.success) {
-        // Recargar tickets después de crear uno nuevo
         await fetchMyTickets();
         return response;
       }
@@ -55,7 +55,6 @@ export function useTickets() {
     try {
       const response = await assignTicket(ticketId, agenteId);
       if (response.success) {
-        // Actualizar el ticket en el estado local
         setTickets(
           tickets.map((t) =>
             t.id === ticketId ? { ...t, agente_id: agenteId } : t
@@ -72,6 +71,24 @@ export function useTickets() {
     }
   };
 
+  // NUEVO: Devolver ticket
+  const devolverTicket = async (ticketId: number, reason: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await returnTicket(ticketId, reason);
+      if (response.success) {
+        await fetchMyTickets();
+        return response;
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al devolver ticket");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     tickets,
     loading,
@@ -79,5 +96,6 @@ export function useTickets() {
     fetchMyTickets,
     createNewTicket,
     assignTicketToAgent,
+    devolverTicket,
   };
 }
