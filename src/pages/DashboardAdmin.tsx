@@ -5,7 +5,7 @@ import { useUsers } from "../hooks/useUsers";
 import { useState, useEffect } from "react";
 import "./styles/user.css";
 import ChatModal from "../components/ChatModal";
-import { createCategory } from "../services/apiClient";
+import { createCategory, updateTicketPriority } from "../services/apiClient";
 import { Ticket, TicketUser } from "../types";
 
 type ViewType = "tickets" | "users";
@@ -26,9 +26,9 @@ function AddCategoryForm({ onCategoryCreated }: AddCategoryFormProps) {
       const result = await createCategory(categoryName);
       if (result.success) {
         alert("Categoría creada exitosamente");
-        setCategoryName(""); // limpia input
+        setCategoryName("");
         if (onCategoryCreated) {
-          onCategoryCreated(result.category); // prop para refrescar lista, si necesitas
+          onCategoryCreated(result.category);
         }
       }
     } catch (err) {
@@ -61,13 +61,11 @@ function AddCategoryForm({ onCategoryCreated }: AddCategoryFormProps) {
   );
 }
 
-// Arriba del componente, fuera del return:
 function getAssignedAgent(
   ticket: Ticket,
   agents: TicketUser[]
 ): TicketUser | null {
   if (!ticket.history) return null;
-  // Encuentra el último histórico con assigned_user_id
   const lastAssign = [...ticket.history]
     .reverse()
     .find((h) => h.assigned_user_id);
@@ -89,12 +87,8 @@ export default function DashboardAdmin() {
     changeUserRole,
     toggleUserStatus,
   } = useUsers();
-  if (tickets.length) {
-    console.log("Primer ticket:", tickets[0]);
-  }
-  // Menú móvil
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>("tickets");
   const [filterStatus, setFilterStatus] = useState<number | "">("");
   const [filterPriority, setFilterPriority] = useState<number | "">("");
@@ -155,6 +149,18 @@ export default function DashboardAdmin() {
     }
   };
 
+  const handleChangePriority = async (
+    ticketId: number,
+    newPriority: number
+  ) => {
+    try {
+      await updateTicketPriority(ticketId, newPriority);
+      await fetchAllTickets();
+    } catch (error) {
+      alert("Error al cambiar la prioridad");
+    }
+  };
+
   const filteredTickets = tickets.filter((t) => {
     const matchesSearch = (t.title + t.description)
       .toLowerCase()
@@ -196,22 +202,8 @@ export default function DashboardAdmin() {
     }
   };
 
-  const getRoleName = (rol_id: number) => {
-    switch (rol_id) {
-      case 1:
-        return "Usuario";
-      case 2:
-        return "Agente";
-      case 3:
-        return "Admin";
-      default:
-        return "Desconocido";
-    }
-  };
-
   return (
     <div className="dashboard-bg">
-      {/* Hamburguesa móvil y overlay */}
       <button
         className="menu-hamburger"
         style={{ display: sidebarOpen ? "none" : undefined }}
@@ -318,7 +310,6 @@ export default function DashboardAdmin() {
               </>
             )}
           </div>
-          {/* TABLE TICKETS */}
           {currentView === "tickets" && (
             <div className="card">
               <h2 style={{ color: "#151d26", marginBottom: 12 }}>
@@ -347,7 +338,25 @@ export default function DashboardAdmin() {
                       </td>
                       <td>{t.tb_user.name}</td>
                       <td>{t.tb_category.description}</td>
-                      <td>{t.tb_priority.description}</td>
+                      <td>
+                        <span
+                          className={`priority-badge priority-${t.tb_priority?.description?.toLowerCase()}`}
+                        >
+                          {t.tb_priority.description}
+                        </span>
+                        <br />
+                        <select
+                          value={t.priority_id}
+                          onChange={(e) =>
+                            handleChangePriority(t.id, Number(e.target.value))
+                          }
+                          style={{ marginTop: "4px" }}
+                        >
+                          <option value={1}>Baja</option>
+                          <option value={2}>Media</option>
+                          <option value={3}>Alta</option>
+                        </select>
+                      </td>
                       <td>
                         <span
                           className={`status ${getStatusText(
@@ -366,23 +375,20 @@ export default function DashboardAdmin() {
                               "Cambio manual de estado"
                             )
                           }
+                          style={{ marginTop: "4px" }}
                         >
                           <option value={1}>Abierto</option>
-                          <option value={2}>En Progreso</option>
-                          <option value={3}>Cerrado</option>
-                          <option value={4}>Devuelto</option>
-                          <option value={5}>Resuelto</option>
-                          <option value={6}>Asignado</option>
-                          <option value={7}>En Espera</option>
+                          <option value={2}>Asignado</option>
+                          <option value={3}>En Progreso</option>
+                          <option value={4}>Entregado</option>
+                          <option value={5}>Devuelto</option>
+                          <option value={6}>Resuelto</option>
+                          <option value={7}>Cerrado</option>
                         </select>
                       </td>
-                      {/* Columna de Agente */}
-
                       <td>
                         {getAssignedAgent(t, agents)?.name || "Sin asignar"}
                       </td>
-
-                      {/* Columna de Chat */}
                       <td>
                         <button
                           className="chat-button table-btn"
@@ -394,7 +400,6 @@ export default function DashboardAdmin() {
                           Chat
                         </button>
                       </td>
-                      {/* Columna de asignación */}
                       <td>
                         <button
                           className="table-btn btn-asignar-verde"
@@ -412,7 +417,6 @@ export default function DashboardAdmin() {
               </table>
             </div>
           )}
-          {/* TABLE USERS */}
           {currentView === "users" && (
             <div className="card">
               <h2 style={{ color: "#151d26", marginBottom: 12 }}>
@@ -457,7 +461,6 @@ export default function DashboardAdmin() {
                           <span className="badge-estado-gris">Inactivo</span>
                         )}
                       </td>
-
                       <td>
                         <button
                           className={
@@ -480,7 +483,6 @@ export default function DashboardAdmin() {
             </div>
           )}
 
-          {/* MODAL ASIGNAR */}
           {showAssignModal && (
             <div
               className="modal-overlay"

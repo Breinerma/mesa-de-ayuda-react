@@ -5,17 +5,20 @@ import { useState, useEffect } from "react";
 import ChatModal from "../components/ChatModal";
 import "./styles/user.css";
 import { Ticket } from "../types";
+import { updateTicketPriority } from "../services/apiClient";
 
 type AgentView = "assigned" | "open";
 type ViewType = "tickets" | "users";
 
 function isTicketAssignedToMe(ticket: Ticket, myUserId: string): boolean {
-  if (!ticket.history) return false;
-  const lastAssign = [...ticket.history]
-    .reverse()
-    .find((h) => h.assigned_user_id);
-  if (lastAssign && lastAssign.assigned_user_id) {
-    return lastAssign.assigned_user_id === myUserId;
+  if (!ticket.history || ticket.history.length === 0) return false;
+
+  // El historial viene ordenado del más reciente al más antiguo
+  // Buscamos desde el inicio (más reciente) el primer registro con assigned_user_id
+  const latestAssignment = ticket.history.find((h) => h.assigned_user_id);
+
+  if (latestAssignment && latestAssignment.assigned_user_id) {
+    return latestAssignment.assigned_user_id === myUserId;
   }
   return false;
 }
@@ -32,7 +35,7 @@ export default function DashboardAgent() {
   const [filterStatus, setFilterStatus] = useState<number | "">("");
   const [filterPriority, setFilterPriority] = useState<number | "">("");
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
-  const [currentView, setCurrentView] = useState<AgentView>("assigned");
+  const [currentView, setCurrentView] = useState<AgentView>("open");
   const [showChatModal, setShowChatModal] = useState(false);
 
   useEffect(() => {
@@ -41,17 +44,18 @@ export default function DashboardAgent() {
 
   if (!user?.id) return null;
 
-  // Filtrar tickets asignados a mí
-  const myAssignedTickets = tickets.filter((t) =>
-    isTicketAssignedToMe(t, user.id)
-  );
+  // SOLUCIÓN TEMPORAL: Filtrar por sw_status === 6 (Asignado)
+  // Ya que no tenemos history disponible
+  const myAssignedTickets = tickets.filter((t) => {
+    // Por ahora usamos el estado "Asignado" como indicador
+    // TODO: Cuando el backend incluya history, usar isTicketAssignedToMe
+    return t.sw_status === 6;
+  });
 
   // Filtrar tickets abiertos o devueltos (sin asignar)
-  const openTickets = tickets.filter(
-    (t) =>
-      !t.history?.some((h) => h.assigned_user_id) &&
-      (t.sw_status === 1 || t.sw_status === 4)
-  );
+  const openTickets = tickets.filter((t) => {
+    return t.sw_status === 1 || t.sw_status === 4;
+  });
 
   // Aplicar filtros de búsqueda y estados según la vista actual
   const getFilteredTickets = () => {
@@ -96,6 +100,18 @@ export default function DashboardAgent() {
       await fetchAllTickets();
     } catch (error) {
       alert("Error al cambiar el estado");
+    }
+  };
+
+  const handleChangePriority = async (
+    ticketId: number,
+    newPriority: number
+  ) => {
+    try {
+      await updateTicketPriority(ticketId, newPriority);
+      await fetchAllTickets();
+    } catch (error) {
+      alert("Error al cambiar la prioridad");
     }
   };
 
@@ -202,7 +218,12 @@ export default function DashboardAgent() {
                 >
                   <option value="">Todos los estados</option>
                   <option value={1}>Abierto</option>
-                  <option value={4}>Devuelto</option>
+                  <option value={2}>Asignado</option>
+                  <option value={3}>En Progreso</option>
+                  <option value={4}>Entregado</option>
+                  <option value={5}>Devuelto</option>
+                  <option value={6}>Resuelto</option>
+                  <option value={7}>Cerrado</option>
                 </select>
                 <select
                   value={filterPriority}
@@ -259,7 +280,25 @@ export default function DashboardAgent() {
                         </td>
                         <td>{t.tb_user?.name || "Sin usuario"}</td>
                         <td>{t.tb_category?.description || "Sin categoría"}</td>
-                        <td>{t.tb_priority?.description || "Sin prioridad"}</td>
+                        <td>
+                          <span
+                            className={`priority-badge priority-${t.tb_priority?.description?.toLowerCase()}`}
+                          >
+                            {t.tb_priority?.description || "Sin prioridad"}
+                          </span>
+                          <br />
+                          <select
+                            value={t.priority_id}
+                            onChange={(e) =>
+                              handleChangePriority(t.id, Number(e.target.value))
+                            }
+                            style={{ marginTop: "4px" }}
+                          >
+                            <option value={1}>Baja</option>
+                            <option value={2}>Media</option>
+                            <option value={3}>Alta</option>
+                          </select>
+                        </td>
                         <td>
                           <span
                             className={`status ${getStatusText(
@@ -278,6 +317,7 @@ export default function DashboardAgent() {
                                 "Cambio de estado por agente"
                               )
                             }
+                            style={{ marginTop: "4px" }}
                           >
                             <option value={1}>Abierto</option>
                             <option value={2}>En Progreso</option>
