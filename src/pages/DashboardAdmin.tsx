@@ -3,15 +3,84 @@ import { useAuth } from "../context/AuthContext";
 import { useTickets } from "../hooks/useTickets";
 import { useUsers } from "../hooks/useUsers";
 import { useState, useEffect } from "react";
-import TicketChat from "../components/TicketChat";
-import { Ticket } from "../types";
 import "./styles/user.css";
+import ChatModal from "../components/ChatModal";
+import { createCategory } from "../services/apiClient";
+import { Ticket, TicketUser } from "../types";
 
 type ViewType = "tickets" | "users";
+interface AddCategoryFormProps {
+  onCategoryCreated?: (category: { id: number; description: string }) => void;
+}
+
+function AddCategoryForm({ onCategoryCreated }: AddCategoryFormProps) {
+  const [categoryName, setCategoryName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const result = await createCategory(categoryName);
+      if (result.success) {
+        alert("Categoría creada exitosamente");
+        setCategoryName(""); // limpia input
+        if (onCategoryCreated) {
+          onCategoryCreated(result.category); // prop para refrescar lista, si necesitas
+        }
+      }
+    } catch (err) {
+      setError("No se pudo crear la categoría");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
+      <input
+        type="text"
+        placeholder="Nueva categoría"
+        value={categoryName}
+        onChange={(e) => setCategoryName(e.target.value)}
+        required
+        style={{ color: "#151d26", marginRight: "12px" }}
+      />
+      <button
+        style={{ color: "#151d26" }}
+        className="table-btn"
+        type="submit"
+        disabled={loading || !categoryName}
+      >
+        Crear Categoría
+      </button>
+      {error && <span style={{ color: "red", marginLeft: 12 }}>{error}</span>}
+    </form>
+  );
+}
+
+// Arriba del componente, fuera del return:
+function getAssignedAgent(
+  ticket: Ticket,
+  agents: TicketUser[]
+): TicketUser | null {
+  if (!ticket.history) return null;
+  // Encuentra el último histórico con assigned_user_id
+  const lastAssign = [...ticket.history]
+    .reverse()
+    .find((h) => h.assigned_user_id);
+  if (lastAssign && lastAssign.assigned_user_id) {
+    return agents.find((a) => a.id === lastAssign.assigned_user_id) || null;
+  }
+  return null;
+}
 
 export default function DashboardAdmin() {
   const { user, logout } = useAuth();
-  const { tickets, fetchMyTickets, assignTicketToAgent } = useTickets();
+  const { tickets, fetchAllTickets, assignTicketToAgent, changeTicketStatus } =
+    useTickets();
   const {
     users,
     agents,
@@ -20,7 +89,9 @@ export default function DashboardAdmin() {
     changeUserRole,
     toggleUserStatus,
   } = useUsers();
-
+  if (tickets.length) {
+    console.log("Primer ticket:", tickets[0]);
+  }
   // Menú móvil
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -31,9 +102,10 @@ export default function DashboardAdmin() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
   const [selectedAgent, setSelectedAgent] = useState("");
+  const [showChatModal, setShowChatModal] = useState(false);
 
   useEffect(() => {
-    fetchMyTickets();
+    fetchAllTickets();
     fetchAllUsers();
     fetchAgents();
   }, []);
@@ -42,12 +114,13 @@ export default function DashboardAdmin() {
     if (selectedTicket && selectedAgent) {
       try {
         await assignTicketToAgent(selectedTicket, selectedAgent);
+        await changeTicketStatus(selectedTicket, 6, "Asignado a agente");
         setShowAssignModal(false);
         setSelectedTicket(null);
         setSelectedAgent("");
-        alert("Ticket asignado exitosamente");
+        alert("Ticket asignado y actualizado a 'Asignado'");
       } catch (error) {
-        alert("Error al asignar ticket");
+        alert("Error al asignar o actualizar estado");
       }
     }
   };
@@ -207,6 +280,7 @@ export default function DashboardAdmin() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            <AddCategoryForm />
             {currentView === "tickets" && (
               <>
                 <select
@@ -216,6 +290,7 @@ export default function DashboardAdmin() {
                       e.target.value === "" ? "" : Number(e.target.value)
                     )
                   }
+                  style={{ color: "#151d26" }}
                 >
                   <option value="">Todos los estados</option>
                   <option value={1}>Abierto</option>
@@ -233,6 +308,7 @@ export default function DashboardAdmin() {
                       e.target.value === "" ? "" : Number(e.target.value)
                     )
                   }
+                  style={{ color: "#151d26" }}
                 >
                   <option value="">Todas las prioridades</option>
                   <option value={1}>Baja</option>
@@ -258,6 +334,7 @@ export default function DashboardAdmin() {
                     <th>Prioridad</th>
                     <th>Estado</th>
                     <th>Agente</th>
+                    <th>Chat</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -279,8 +356,45 @@ export default function DashboardAdmin() {
                         >
                           {getStatusText(t.sw_status)}
                         </span>
+                        <br />
+                        <select
+                          value={t.sw_status}
+                          onChange={(e) =>
+                            changeTicketStatus(
+                              t.id,
+                              Number(e.target.value),
+                              "Cambio manual de estado"
+                            )
+                          }
+                        >
+                          <option value={1}>Abierto</option>
+                          <option value={2}>En Progreso</option>
+                          <option value={3}>Cerrado</option>
+                          <option value={4}>Devuelto</option>
+                          <option value={5}>Resuelto</option>
+                          <option value={6}>Asignado</option>
+                          <option value={7}>En Espera</option>
+                        </select>
                       </td>
-                      <td>{t.agente_id ? "Asignado" : "Sin asignar"}</td>
+                      {/* Columna de Agente */}
+
+                      <td>
+                        {getAssignedAgent(t, agents)?.name || "Sin asignar"}
+                      </td>
+
+                      {/* Columna de Chat */}
+                      <td>
+                        <button
+                          className="chat-button table-btn"
+                          onClick={() => {
+                            setSelectedTicket(t.id);
+                            setShowChatModal(true);
+                          }}
+                        >
+                          Chat
+                        </button>
+                      </td>
+                      {/* Columna de asignación */}
                       <td>
                         <button
                           className="table-btn btn-asignar-verde"
@@ -407,6 +521,14 @@ export default function DashboardAdmin() {
                 </div>
               </div>
             </div>
+          )}
+
+          {showChatModal && selectedTicket && (
+            <ChatModal
+              ticketId={selectedTicket}
+              onClose={() => setShowChatModal(false)}
+              currentUser={user}
+            />
           )}
         </div>
       </main>

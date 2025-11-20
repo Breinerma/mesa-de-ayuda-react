@@ -5,7 +5,7 @@ import { useUsers } from "../hooks/useUsers";
 import {
   createTicket,
   createTicketWithImages,
-  getTicketMessages,
+  getTicketConversation,
   sendTicketMessage,
 } from "../services/apiClient";
 import { useCategories } from "../hooks/useCategories";
@@ -90,24 +90,45 @@ export default function DashboardUser() {
     setChatOpen(ticketId);
     setChatLoading(true);
     try {
-      const res = await getTicketMessages(ticketId);
-      setChatMessages(res.messages || []);
+      // Primer intento
+      const messages = await getTicketConversation(ticketId);
+      setChatMessages(messages);
+      console.log("Primer intento conversación:", messages);
+      // 700 ms
+
+      if (!messages || messages.length === 0) {
+        setTimeout(async () => {
+          const retryMessages = await getTicketConversation(ticketId);
+          setChatMessages(retryMessages);
+          console.log("Segundo intento conversación:", retryMessages);
+          setChatLoading(false);
+        }, 700);
+      } else {
+        setChatLoading(false);
+      }
     } catch (err) {
-      alert("No se pudo cargar el chat");
+      alert("No se pudo cargar la conversación.");
       setChatMessages([]);
+      setChatLoading(false);
     }
-    setChatLoading(false);
   }
   async function handleSendMessage(e: React.FormEvent) {
     e.preventDefault();
     if (!chatOpen || !newMessage.trim()) return;
     try {
       await sendTicketMessage(chatOpen, newMessage);
-      setNewMessage(""); // Vuelve a pedir lista mensajes
-      const res = await getTicketMessages(chatOpen);
-      setChatMessages(res.messages || []);
+      setNewMessage("");
+      setTimeout(async () => {
+        const messages = await getTicketConversation(chatOpen);
+        console.log("Conversación recibida:", messages);
+        setChatMessages(messages);
+      }, 600);
     } catch (err) {
-      alert("No se pudo enviar el mensaje");
+      alert(
+        "No se pudo enviar el mensaje: " +
+          (err instanceof Error ? err.message : String(err))
+      );
+      console.error("Fallo de mensaje", err);
     }
   }
 
@@ -279,7 +300,7 @@ export default function DashboardUser() {
                     Prioridad: <strong>{t.tb_priority.description}</strong>
                   </span>
                 </div>
-                {(t.sw_status === 3 || t.sw_status === 5) && (
+                {(t.sw_status === 3 || t.sw_status === 4) && (
                   <button
                     className="user-return-btn"
                     onClick={() => {
@@ -459,25 +480,66 @@ export default function DashboardUser() {
                   }}
                 >
                   {chatMessages.length === 0 && <em>No hay mensajes aún.</em>}
-                  {chatMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      style={{
-                        background: "#f4f8fd",
-                        margin: "7px 0",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        textAlign: msg.user_id === user?.id ? "right" : "left",
-                      }}
-                    >
-                      <span style={{ fontSize: ".98em" }}>{msg.content}</span>
-                      <br />
-                      <small style={{ color: "#598", fontStyle: "italic" }}>
-                        {new Date(msg.sent_at).toLocaleString()}
-                        {msg.user_id === user?.id && " (tú)"}
-                      </small>
-                    </div>
-                  ))}
+                  {chatMessages.map((msg) => {
+                    const isSelf = msg.user_id === user?.id;
+                    const nombreUsuario = msg.tb_user?.name || "Usuario";
+                    const rol =
+                      msg.tb_user?.rol_id === 2 ? "Agente" : "Usuario";
+
+                    return (
+                      <div
+                        key={msg.id}
+                        style={{
+                          background: isSelf ? "#e9fce9" : "#f4f8fd",
+                          textAlign: isSelf ? "right" : "left",
+                          padding: "8px 12px",
+                          borderRadius: 9,
+                          margin: "12px 0 4px 0",
+                          border: isSelf
+                            ? "1.2px solid #12c484"
+                            : "1.2px solid #bbd2f0",
+                          maxWidth: "90%",
+                          marginLeft: isSelf ? "auto" : 0,
+                          marginRight: isSelf ? 0 : "auto",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            color: isSelf ? "#129655" : "#1a3578",
+                            fontSize: "1.06em",
+                          }}
+                        >
+                          {isSelf ? "Tú" : nombreUsuario}
+                          <span
+                            style={{
+                              fontWeight: 400,
+                              color: "#8ab",
+                              fontSize: ".98em",
+                              marginLeft: 7,
+                            }}
+                          >
+                            {rol}
+                          </span>
+                        </div>
+                        <div
+                          style={{ margin: "6px 0 2px 0", fontSize: "1.14em" }}
+                        >
+                          {msg.content}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: ".96em",
+                            color: "#587",
+                            marginTop: 2,
+                            fontStyle: "italic",
+                          }}
+                        >
+                          {new Date(msg.sent_at).toLocaleString()}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               <form

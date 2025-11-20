@@ -271,6 +271,21 @@ export async function getTickets(): Promise<any> {
   return response.json();
 }
 
+export async function getTicketWithImages(ticketId: number) {
+  const response = await fetch(
+    `https://helpdesks.up.railway.app/api/tickets/${ticketId}/with-images`,
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  if (!response.ok) throw new Error("Error al obtener el ticket");
+  const data = await response.json();
+  return data.ticket;
+}
+
 export async function assignTicket(
   ticketId: number,
   agente_id: string
@@ -288,6 +303,26 @@ export async function assignTicket(
     throw new Error("Error al asignar ticket");
   }
 
+  return response.json();
+}
+
+export async function updateTicketStatus(
+  ticketId: number,
+  sw_status: number,
+  description: string
+): Promise<any> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/tickets/${ticketId}/status`,
+    {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ sw_status, description }),
+    }
+  );
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error("Error al actualizar estado del ticket: " + errorText);
+  }
   return response.json();
 }
 
@@ -348,14 +383,13 @@ export async function createCategory(name: string): Promise<any> {
     console.error("Error al actualizar perfil:", errorText);
     throw new Error("Error al crear categoría");
   }
-
   return response.json();
 }
 
 // ==================== MESSAGES ====================
-export async function getTicketMessages(ticketId: number) {
+export async function getTicketConversation(ticketId: number) {
   const response = await fetch(
-    `https://helpdesks.up.railway.app/api/tickets/${ticketId}/messages`,
+    `https://helpdesks.up.railway.app/api/tickets/${ticketId}/conversation`,
     {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -363,8 +397,17 @@ export async function getTicketMessages(ticketId: number) {
       },
     }
   );
-  if (!response.ok) throw new Error("Error al obtener mensajes");
-  return response.json();
+  if (!response.ok) {
+    const msg = await response.text();
+    throw new Error("Error al obtener la conversación: " + msg);
+  }
+  const data = await response.json();
+  console.log("Conversación recibida:", data);
+  const mensajes = data?.conversation?.global?.messages;
+  if (Array.isArray(mensajes)) {
+    return mensajes;
+  }
+  return [];
 }
 
 export async function sendTicketMessage(ticketId: number, content: string) {
@@ -379,30 +422,30 @@ export async function sendTicketMessage(ticketId: number, content: string) {
       body: JSON.stringify({ content }),
     }
   );
-  if (!response.ok) throw new Error("Error al enviar mensaje");
-  const errorText = await response.text();
-  console.error("Error al Enviar mensaje:", errorText);
-  return response.json();
+  const data = await response.json();
+  if (!response.ok || data.success !== true) {
+    throw new Error(
+      "Error al enviar mensaje: " + (data.text || JSON.stringify(data))
+    );
+  }
+  return data;
 }
 
-export async function replyToTicket(
-  ticketId: number,
-  content: string
-): Promise<any> {
+export async function replyToTicket(ticketId: number, content: string) {
   const response = await fetch(
-    `${API_BASE_URL}/api/tickets/${ticketId}/reply`,
+    `https://helpdesks.up.railway.app/api/tickets/${ticketId}/reply`,
     {
       method: "POST",
-      headers: getAuthHeaders(),
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ content }),
     }
   );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Error al Enviar respuesta:", errorText);
-    throw new Error("Error al enviar respuesta");
+  const data = await response.json();
+  if (!response.ok || data.success !== true) {
+    throw new Error("Error al enviar respuesta " + (data.text || ""));
   }
-
-  return response.json();
+  return data;
 }

@@ -2,18 +2,40 @@
 import { useState } from "react";
 import {
   createTicket,
+  getTickets,
   getMyTickets,
   assignTicket,
   updateTicketPriority,
   returnTicket,
+  updateTicketStatus,
 } from "../services/apiClient";
-import { Ticket, CreateTicketData } from "../types";
+import { CreateTicketData } from "../types";
 import { useAuth } from "../context/AuthContext";
 
 export function useTickets() {
   const { tickets, setTickets } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchAllTickets = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getTickets();
+      if (response.success) {
+        setTickets(response.tickets || []);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al obtener todos los tickets"
+      );
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchMyTickets = async () => {
     setLoading(true);
@@ -71,7 +93,33 @@ export function useTickets() {
     }
   };
 
-  // NUEVO: Devolver ticket
+  const changeTicketStatus = async (
+    ticketId: number,
+    sw_status: number,
+    description = "Actualización de estado"
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await updateTicketStatus(
+        ticketId,
+        sw_status,
+        description
+      );
+      if (response.success) {
+        await fetchMyTickets();
+        return response;
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Error al actualizar estado"
+      );
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const devolverTicket = async (ticketId: number, reason: string) => {
     setLoading(true);
     setError(null);
@@ -93,9 +141,11 @@ export function useTickets() {
     tickets,
     loading,
     error,
+    fetchAllTickets,
     fetchMyTickets,
     createNewTicket,
     assignTicketToAgent,
     devolverTicket,
+    changeTicketStatus,
   };
 }

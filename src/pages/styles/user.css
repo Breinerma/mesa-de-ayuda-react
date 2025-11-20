@@ -258,7 +258,16 @@ html,
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.text-black {
+  color: rgb(0, 0, 0, 0.1);
+}
+
 /* ========= BOTONES MODALES ========= */
+.chat-button {
+  margin-right: 8px;
+  background: rgb(125, 194, 255);
+  border-radius: 4px;
+}
 .create-button {
   background: #4caf50;
   color: white;

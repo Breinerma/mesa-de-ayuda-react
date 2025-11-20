@@ -41,8 +41,18 @@ export interface TicketUser {
   id: string;
   name: string;
   email: string;
+  rol_id?: number;
 }
 
+export interface TicketHistoryItem {
+  id: string;
+  sw_status: number;
+  assigned_user_id?: string;
+  updated_at?: string | null;
+  description?: string;
+  ticket_header_id: number;
+  tb_user?: TicketUser;
+}
 export interface Ticket {
   id: number;
   title: string;
@@ -57,6 +67,7 @@ export interface Ticket {
   tb_priority: Priority;
   tb_user: TicketUser;
   tb_agente?: TicketUser | null;
+  history?: TicketHistoryItem[];
 }
 
 export interface CreateTicketData {

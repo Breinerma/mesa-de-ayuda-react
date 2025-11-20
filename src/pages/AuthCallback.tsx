@@ -151,7 +151,7 @@ export default function AuthCallback() {
       }}
     >
       <div style={{ fontSize: "3em" }}>
-        {status.includes("Error") ? "❌" : "☠️"}
+        {status.includes("Error") ? "❌" : "⏳"}
       </div>
       <div>{status}</div>
       <div style={{ fontSize: "0.8em", opacity: 0.7, maxWidth: "500px" }}>

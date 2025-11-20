@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   sendTicketMessage,
   replyToTicket,
-  getTicketMessages,
+  getTicketConversation,
 } from "../services/apiClient";
 import { Message } from "../types";
 import { useAuth } from "../context/AuthContext";
@@ -18,11 +18,9 @@ export function useMessages() {
     setLoading(true);
     setError(null);
     try {
-      const response = await getTicketMessages(ticketId);
-      if (response.success) {
-        setMessages(response.messages || []);
-        return response.messages;
-      }
+      const messagesArray = await getTicketConversation(ticketId);
+      setMessages(messagesArray || []);
+      return messagesArray;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al obtener mensajes"
@@ -43,7 +41,6 @@ export function useMessages() {
           : await sendTicketMessage(ticketId, content);
 
       if (response.success) {
-        // Agregar el mensaje nuevo al estado
         setMessages((prev) => [...prev, response.message]);
         return response;
       }
