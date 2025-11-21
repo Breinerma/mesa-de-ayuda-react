@@ -2,11 +2,16 @@
 import { useAuth } from "../context/AuthContext";
 import { useTickets } from "../hooks/useTickets";
 import { useUsers } from "../hooks/useUsers";
+import { useCategories } from "../hooks/useCategories";
 import { useState, useEffect } from "react";
 import "./styles/user.css";
 import ChatModal from "../components/ChatModal";
-import { createCategory, updateTicketPriority } from "../services/apiClient";
-import { Ticket, TicketUser } from "../types";
+import {
+  createCategory,
+  updateTicketPriority,
+  updateTicketCategory,
+} from "../services/apiClient";
+import { Ticket } from "../types";
 
 type ViewType = "tickets" | "users";
 interface AddCategoryFormProps {
@@ -61,20 +66,6 @@ function AddCategoryForm({ onCategoryCreated }: AddCategoryFormProps) {
   );
 }
 
-function getAssignedAgent(
-  ticket: Ticket,
-  agents: TicketUser[]
-): TicketUser | null {
-  if (!ticket.history) return null;
-  const lastAssign = [...ticket.history]
-    .reverse()
-    .find((h) => h.assigned_user_id);
-  if (lastAssign && lastAssign.assigned_user_id) {
-    return agents.find((a) => a.id === lastAssign.assigned_user_id) || null;
-  }
-  return null;
-}
-
 export default function DashboardAdmin() {
   const { user, logout } = useAuth();
   const { tickets, fetchAllTickets, assignTicketToAgent, changeTicketStatus } =
@@ -87,6 +78,7 @@ export default function DashboardAdmin() {
     changeUserRole,
     toggleUserStatus,
   } = useUsers();
+  const { categories } = useCategories();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>("tickets");
@@ -108,11 +100,12 @@ export default function DashboardAdmin() {
     if (selectedTicket && selectedAgent) {
       try {
         await assignTicketToAgent(selectedTicket, selectedAgent);
-        await changeTicketStatus(selectedTicket, 6, "Asignado a agente");
+        await changeTicketStatus(selectedTicket, 2, "Asignado a agente");
+        await fetchAllTickets();
         setShowAssignModal(false);
         setSelectedTicket(null);
         setSelectedAgent("");
-        alert("Ticket asignado y actualizado a 'Asignado'");
+        alert("Ticket asignado y actualizado");
       } catch (error) {
         alert("Error al asignar o actualizar estado");
       }
@@ -161,6 +154,18 @@ export default function DashboardAdmin() {
     }
   };
 
+  const handleChangeCategory = async (
+    ticketId: number,
+    newCategory: number
+  ) => {
+    try {
+      await updateTicketCategory(ticketId, newCategory);
+      await fetchAllTickets();
+    } catch (error) {
+      alert("Error al cambiar la categoría");
+    }
+  };
+
   const filteredTickets = tickets.filter((t) => {
     const matchesSearch = (t.title + t.description)
       .toLowerCase()
@@ -186,17 +191,17 @@ export default function DashboardAdmin() {
       case 1:
         return "Abierto";
       case 2:
-        return "En Progreso";
-      case 3:
-        return "Cerrado";
-      case 4:
-        return "Devuelto";
-      case 5:
-        return "Resuelto";
-      case 6:
         return "Asignado";
+      case 3:
+        return "En Progreso";
+      case 4:
+        return "Entregado";
+      case 5:
+        return "Devuelto";
+      case 6:
+        return "Resuelto";
       case 7:
-        return "En espera";
+        return "Cerrado";
       default:
         return "Desconocido";
     }
@@ -286,12 +291,12 @@ export default function DashboardAdmin() {
                 >
                   <option value="">Todos los estados</option>
                   <option value={1}>Abierto</option>
-                  <option value={2}>En Progreso</option>
-                  <option value={3}>Cerrado</option>
-                  <option value={4}>Devuelto</option>
-                  <option value={5}>Resuelto</option>
-                  <option value={6}>Asignado</option>
-                  <option value={7}>En espera</option>
+                  <option value={2}>Asignado</option>
+                  <option value={3}>En Progreso</option>
+                  <option value={4}>Entregado</option>
+                  <option value={5}>Devuelto</option>
+                  <option value={6}>Resuelto</option>
+                  <option value={7}>Cerrado</option>
                 </select>
                 <select
                   value={filterPriority}
@@ -324,7 +329,6 @@ export default function DashboardAdmin() {
                     <th>Categoría</th>
                     <th>Prioridad</th>
                     <th>Estado</th>
-                    <th>Agente</th>
                     <th>Chat</th>
                     <th>Acciones</th>
                   </tr>
@@ -337,7 +341,34 @@ export default function DashboardAdmin() {
                         <strong>{t.title}</strong>
                       </td>
                       <td>{t.tb_user.name}</td>
-                      <td>{t.tb_category.description}</td>
+                      <td>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "4px 8px",
+                            background: "#e8f4f8",
+                            borderRadius: "4px",
+                            fontSize: "0.9em",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          {t.tb_category.description}
+                        </span>
+                        <br />
+                        <select
+                          value={t.category_id}
+                          onChange={(e) =>
+                            handleChangeCategory(t.id, Number(e.target.value))
+                          }
+                          style={{ marginTop: "4px", width: "100%" }}
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.description}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
                       <td>
                         <span
                           className={`priority-badge priority-${t.tb_priority?.description?.toLowerCase()}`}
@@ -385,9 +416,6 @@ export default function DashboardAdmin() {
                           <option value={6}>Resuelto</option>
                           <option value={7}>Cerrado</option>
                         </select>
-                      </td>
-                      <td>
-                        {getAssignedAgent(t, agents)?.name || "Sin asignar"}
                       </td>
                       <td>
                         <button

@@ -27,6 +27,20 @@ export function ChatModal({ ticketId, onClose, currentUser }: ChatModalProps) {
     }
   };
 
+  const getRoleName = (rolId: number | undefined) => {
+    if (!rolId) return "Usuario";
+    switch (rolId) {
+      case 1:
+        return "Usuario";
+      case 2:
+        return "Agente";
+      case 3:
+        return "Admin";
+      default:
+        return "Usuario";
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -38,15 +52,21 @@ export function ChatModal({ ticketId, onClose, currentUser }: ChatModalProps) {
         <div style={{ maxHeight: 250, overflowY: "auto", marginBottom: 12 }}>
           {loading && <div>Cargando...</div>}
           {messages.length === 0 && !loading && <em>No hay mensajes.</em>}
-          {messages.map((msg) => {
+          {messages.map((msg: any) => {
             const isSelf = msg.user_id === currentUser?.id;
-            const nombreUsuario = msg.user?.name || "Usuario";
-            const rol =
-              msg.user?.rol_id === 2
-                ? "Agente"
-                : msg.user?.rol_id === 3
-                ? "Admin"
-                : "Usuario";
+
+            // CORRECCIÓN: usar tb_user en lugar de user
+            const nombreUsuario =
+              msg.tb_user?.name || msg.user?.name || "Usuario";
+
+            // Si es el usuario actual, usa currentUser.rol_id
+            // Si no, busca en tb_user.rol_id o user.rol_id
+            const rolId = isSelf
+              ? currentUser?.rol_id
+              : msg.tb_user?.rol_id || msg.user?.rol_id || 1;
+
+            const rol = getRoleName(rolId);
+
             return (
               <div
                 key={msg.id}
@@ -80,7 +100,7 @@ export function ChatModal({ ticketId, onClose, currentUser }: ChatModalProps) {
                       marginLeft: 7,
                     }}
                   >
-                    {rol}
+                    ({rol})
                   </span>
                 </div>
                 <div style={{ margin: "6px 0 2px 0", fontSize: "1.14em" }}>

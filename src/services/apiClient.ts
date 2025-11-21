@@ -370,6 +370,30 @@ export async function updateTicketPriority(
   return response.json();
 }
 
+// Agregar esta función en src/services/apiClient.ts
+
+export async function updateTicketCategory(
+  ticketId: number,
+  category_id: number
+): Promise<any> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/tickets/${ticketId}/category`,
+    {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ category_id }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Error al actualizar categoría:", errorText);
+    throw new Error("Error al actualizar categoría");
+  }
+
+  return response.json();
+}
+
 // ==================== CATEGORIES ====================
 export async function createCategory(name: string): Promise<any> {
   const response = await fetch(`${API_BASE_URL}/api/categories`, {

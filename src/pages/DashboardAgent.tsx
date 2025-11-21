@@ -1,34 +1,24 @@
 // src/pages/DashboardAgent.tsx
 import { useAuth } from "../context/AuthContext";
 import { useTickets } from "../hooks/useTickets";
+import { useCategories } from "../hooks/useCategories";
 import { useState, useEffect } from "react";
 import ChatModal from "../components/ChatModal";
 import "./styles/user.css";
-import { Ticket } from "../types";
-import { updateTicketPriority } from "../services/apiClient";
+import {
+  updateTicketPriority,
+  updateTicketCategory,
+} from "../services/apiClient";
 
 type AgentView = "assigned" | "open";
 type ViewType = "tickets" | "users";
-
-function isTicketAssignedToMe(ticket: Ticket, myUserId: string): boolean {
-  if (!ticket.history || ticket.history.length === 0) return false;
-
-  // El historial viene ordenado del más reciente al más antiguo
-  // Buscamos desde el inicio (más reciente) el primer registro con assigned_user_id
-  const latestAssignment = ticket.history.find((h) => h.assigned_user_id);
-
-  if (latestAssignment && latestAssignment.assigned_user_id) {
-    return latestAssignment.assigned_user_id === myUserId;
-  }
-  return false;
-}
 
 export default function DashboardAgent() {
   const { user, logout } = useAuth();
   const { tickets, fetchAllTickets, assignTicketToAgent, changeTicketStatus } =
     useTickets();
+  const { categories } = useCategories();
 
-  // Menú móvil
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentViewT] = useState<ViewType>("tickets");
   const [search, setSearch] = useState("");
@@ -44,20 +34,14 @@ export default function DashboardAgent() {
 
   if (!user?.id) return null;
 
-  // SOLUCIÓN TEMPORAL: Filtrar por sw_status === 6 (Asignado)
-  // Ya que no tenemos history disponible
-  const myAssignedTickets = tickets.filter((t) => {
-    // Por ahora usamos el estado "Asignado" como indicador
-    // TODO: Cuando el backend incluya history, usar isTicketAssignedToMe
-    return t.sw_status === 6;
-  });
+  // Filtrar por estado Asignado (2)
+  const myAssignedTickets = tickets.filter((t) => t.sw_status === 2);
 
-  // Filtrar tickets abiertos o devueltos (sin asignar)
-  const openTickets = tickets.filter((t) => {
-    return t.sw_status === 1 || t.sw_status === 4;
-  });
+  // Filtrar tickets abiertos (1) o devueltos (5)
+  const openTickets = tickets.filter(
+    (t) => t.sw_status === 1 || t.sw_status === 5
+  );
 
-  // Aplicar filtros de búsqueda y estados según la vista actual
   const getFilteredTickets = () => {
     const sourceTickets =
       currentView === "assigned" ? myAssignedTickets : openTickets;
@@ -82,11 +66,11 @@ export default function DashboardAgent() {
   const handleAssignToMe = async (ticketId: number) => {
     try {
       await assignTicketToAgent(ticketId, user.id);
-      await changeTicketStatus(ticketId, 6, "Agente se asignó ticket");
+      await changeTicketStatus(ticketId, 2, "Agente se asignó ticket");
       await fetchAllTickets();
-      alert("Ticket asignado y actualizado a 'Asignado'");
+      alert("Ticket asignado exitosamente");
     } catch (error) {
-      alert("Error al asignar o actualizar estado");
+      alert("Error al asignar ticket");
     }
   };
 
@@ -115,22 +99,34 @@ export default function DashboardAgent() {
     }
   };
 
+  const handleChangeCategory = async (
+    ticketId: number,
+    newCategory: number
+  ) => {
+    try {
+      await updateTicketCategory(ticketId, newCategory);
+      await fetchAllTickets();
+    } catch (error) {
+      alert("Error al cambiar la categoría");
+    }
+  };
+
   const getStatusText = (sw_status: number) => {
     switch (sw_status) {
       case 1:
         return "Abierto";
       case 2:
-        return "En Progreso";
-      case 3:
-        return "Cerrado";
-      case 4:
-        return "Devuelto";
-      case 5:
-        return "Resuelto";
-      case 6:
         return "Asignado";
+      case 3:
+        return "En Progreso";
+      case 4:
+        return "Entregado";
+      case 5:
+        return "Devuelto";
+      case 6:
+        return "Resuelto";
       case 7:
-        return "En Espera";
+        return "Cerrado";
       default:
         return "Desconocido";
     }
@@ -138,7 +134,6 @@ export default function DashboardAgent() {
 
   return (
     <div className="dashboard-bg">
-      {/* Hamburguesa móvil y overlay */}
       <button
         className="menu-hamburger"
         style={{ display: sidebarOpen ? "none" : undefined }}
@@ -243,7 +238,6 @@ export default function DashboardAgent() {
             )}
           </div>
 
-          {/* VISTA: MIS TICKETS ASIGNADOS */}
           {currentView === "assigned" && (
             <div className="card">
               <h2 style={{ color: "#151d26", marginBottom: 12 }}>
@@ -279,7 +273,34 @@ export default function DashboardAgent() {
                           <strong>{t.title}</strong>
                         </td>
                         <td>{t.tb_user?.name || "Sin usuario"}</td>
-                        <td>{t.tb_category?.description || "Sin categoría"}</td>
+                        <td>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "4px 8px",
+                              background: "#e8f4f8",
+                              borderRadius: "4px",
+                              fontSize: "0.9em",
+                              marginBottom: "4px",
+                            }}
+                          >
+                            {t.tb_category?.description || "Sin categoría"}
+                          </span>
+                          <br />
+                          <select
+                            value={t.category_id}
+                            onChange={(e) =>
+                              handleChangeCategory(t.id, Number(e.target.value))
+                            }
+                            style={{ marginTop: "4px", width: "100%" }}
+                          >
+                            {categories.map((cat) => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.description}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
                         <td>
                           <span
                             className={`priority-badge priority-${t.tb_priority?.description?.toLowerCase()}`}
@@ -320,12 +341,12 @@ export default function DashboardAgent() {
                             style={{ marginTop: "4px" }}
                           >
                             <option value={1}>Abierto</option>
-                            <option value={2}>En Progreso</option>
-                            <option value={3}>Cerrado</option>
-                            <option value={4}>Devuelto</option>
-                            <option value={5}>Resuelto</option>
-                            <option value={6}>Asignado</option>
-                            <option value={7}>En Espera</option>
+                            <option value={2}>Asignado</option>
+                            <option value={3}>En Progreso</option>
+                            <option value={4}>Entregado</option>
+                            <option value={5}>Devuelto</option>
+                            <option value={6}>Resuelto</option>
+                            <option value={7}>Cerrado</option>
                           </select>
                         </td>
                         <td>
@@ -347,7 +368,6 @@ export default function DashboardAgent() {
             </div>
           )}
 
-          {/* VISTA: TICKETS ABIERTOS/DEVUELTOS */}
           {currentView === "open" && (
             <div className="card">
               <h2 style={{ color: "#151d26", marginBottom: 12 }}>
@@ -410,7 +430,6 @@ export default function DashboardAgent() {
             </div>
           )}
 
-          {/* MODAL DE CHAT */}
           {showChatModal && selectedTicket && (
             <ChatModal
               ticketId={selectedTicket}

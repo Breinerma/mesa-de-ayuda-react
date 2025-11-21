@@ -46,39 +46,53 @@ export default function DashboardUser() {
       case 1:
         return "badge badge-abierto";
       case 2:
-        return "badge badge-progreso";
-      case 3:
-        return "badge badge-cerrado";
-      case 4:
-        return "badge badge-devuelto";
-      case 5:
-        return "badge badge-resuelto";
-      case 6:
         return "badge badge-asignado";
+      case 3:
+        return "badge badge-progreso";
+      case 4:
+        return "badge badge-entregado";
+      case 5:
+        return "badge badge-devuelto";
+      case 6:
+        return "badge badge-resuelto";
       case 7:
-        return "badge badge-espera";
+        return "badge badge-cerrado";
       default:
         return "badge badge-desconocido";
     }
   };
+
   const statusText = (sw_status: number) => {
     switch (sw_status) {
       case 1:
         return "Abierto";
       case 2:
-        return "En Progreso";
-      case 3:
-        return "Cerrado";
-      case 4:
-        return "Devuelto";
-      case 5:
-        return "Resuelto";
-      case 6:
         return "Asignado";
+      case 3:
+        return "En Progreso";
+      case 4:
+        return "Entregado";
+      case 5:
+        return "Devuelto";
+      case 6:
+        return "Resuelto";
       case 7:
-        return "En espera";
+        return "Cerrado";
       default:
         return "Desconocido";
+    }
+  };
+
+  const getRoleName = (rolId: number) => {
+    switch (rolId) {
+      case 1:
+        return "Usuario";
+      case 2:
+        return "Agente";
+      case 3:
+        return "Admin";
+      default:
+        return "Usuario";
     }
   };
 
@@ -86,15 +100,14 @@ export default function DashboardUser() {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
+
   async function openChatForTicket(ticketId: number) {
     setChatOpen(ticketId);
     setChatLoading(true);
     try {
-      // Primer intento
       const messages = await getTicketConversation(ticketId);
       setChatMessages(messages);
       console.log("Primer intento conversación:", messages);
-      // 700 ms
 
       if (!messages || messages.length === 0) {
         setTimeout(async () => {
@@ -112,6 +125,7 @@ export default function DashboardUser() {
       setChatLoading(false);
     }
   }
+
   async function handleSendMessage(e: React.FormEvent) {
     e.preventDefault();
     if (!chatOpen || !newMessage.trim()) return;
@@ -120,7 +134,6 @@ export default function DashboardUser() {
       setNewMessage("");
       setTimeout(async () => {
         const messages = await getTicketConversation(chatOpen);
-        console.log("Conversación recibida:", messages);
         setChatMessages(messages);
       }, 600);
     } catch (err) {
@@ -157,7 +170,7 @@ export default function DashboardUser() {
           images: images,
         });
       } else {
-        await createTicket(ticketForm); // la versión JSON
+        await createTicket(ticketForm);
       }
       setSubiendo(false);
       setShowCreateModal(false);
@@ -187,6 +200,7 @@ export default function DashboardUser() {
       alert("Error al actualizar perfil");
     }
   };
+
   const {
     categories,
     loading: categoriesLoading,
@@ -195,26 +209,22 @@ export default function DashboardUser() {
 
   return (
     <div className="dashboard-bg">
-      <>
-        {/* ==== MENÚ HAMBURGUESA (solo visible en móvil) ==== */}
-        <button
-          className="menu-hamburger"
-          style={{ display: sidebarOpen ? "none" : undefined }}
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Abrir menú lateral"
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-        {/* ==== OVERLAY para cerrar sidebar tocando fuera ==== */}
-        {sidebarOpen && (
-          <div
-            className="sidebar-backdrop"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-      </>
+      <button
+        className="menu-hamburger"
+        style={{ display: sidebarOpen ? "none" : undefined }}
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Abrir menú lateral"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      {sidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       <div
         className={`sidebar user-sidebar${
@@ -270,7 +280,6 @@ export default function DashboardUser() {
               + Crear Ticket
             </button>
           </div>
-          {/* Cards grid */}
           <div className="user-cards">
             {loading && <p>Cargando tickets...</p>}
             {!loading && filtered.length === 0 && (
@@ -300,7 +309,7 @@ export default function DashboardUser() {
                     Prioridad: <strong>{t.tb_priority.description}</strong>
                   </span>
                 </div>
-                {(t.sw_status === 3 || t.sw_status === 4) && (
+                {(t.sw_status === 6 || t.sw_status === 7) && (
                   <button
                     className="user-return-btn"
                     onClick={() => {
@@ -319,7 +328,7 @@ export default function DashboardUser() {
             ))}
           </div>
         </div>
-        {/* =================== Modal Crear Ticket =================== */}
+
         {showCreateModal && (
           <div
             className="modal-overlay"
@@ -363,7 +372,7 @@ export default function DashboardUser() {
                     }
                     const tooBig = files.find((f) => f.size > 3 * 1024 * 1024);
                     if (tooBig) {
-                      setImageError("Cada imagen debe pesar máximo 3 MB.");
+                      setImageError("Cada imagen debe pesar máximo 3 MB.");
                       setImages([]);
                     } else {
                       setImages(files);
@@ -460,7 +469,7 @@ export default function DashboardUser() {
             </div>
           </div>
         )}
-        {/* ==================== Modal Chat ==================== */}
+
         {chatOpen && (
           <div className="modal-overlay" onClick={() => setChatOpen(null)}>
             <div
@@ -483,8 +492,16 @@ export default function DashboardUser() {
                   {chatMessages.map((msg) => {
                     const isSelf = msg.user_id === user?.id;
                     const nombreUsuario = msg.tb_user?.name || "Usuario";
-                    const rol =
-                      msg.tb_user?.rol_id === 2 ? "Agente" : "Usuario";
+                    const rolId = msg.tb_user?.rol_id || 1;
+                    const rol = getRoleName(rolId);
+                    // Debug temporal - eliminar después
+                    console.log("Mensaje:", {
+                      msgId: msg.id,
+                      isSelf,
+                      msgUser: msg.user,
+                      rolId,
+                      rol,
+                    });
 
                     return (
                       <div
@@ -519,7 +536,7 @@ export default function DashboardUser() {
                               marginLeft: 7,
                             }}
                           >
-                            {rol}
+                            ({rol})
                           </span>
                         </div>
                         <div
@@ -572,7 +589,7 @@ export default function DashboardUser() {
             </div>
           </div>
         )}
-        {/* =================== Modal Perfil =================== */}
+
         {showProfileModal && (
           <div
             className="modal-overlay"
@@ -616,8 +633,7 @@ export default function DashboardUser() {
                         margin: "13px 0",
                       }}
                     >
-                      Enviando ticket y archivos... Esto puede tardar unos
-                      minutos. Por favor NO cierres la ventana.
+                      Guardando...
                     </div>
                   )}
                   <button type="submit" className="create-button">
